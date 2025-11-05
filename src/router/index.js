@@ -9,6 +9,7 @@ import Login from '../views/Login.vue'
 import Pos from '../views/Pos.vue'
 import Admin from '../views/Admin.vue'
 import Receipt from '../views/Receipt.vue'
+import Landing from '../views/Landing.vue'
 
 // Impor halaman anak (admin)
 import AdminReports from '../views/admin/Reports.vue'
@@ -17,6 +18,23 @@ import AdminProducts from '../views/admin/Products.vue'
 import AdminCustomers from '../views/admin/Customers.vue'
 
 const routes = [
+  {
+    path: '/',
+    name: 'Landing',
+    component: Landing
+  },
+  {
+  path: '/settings/company',
+  name: 'CompanySettings',
+  component: () => import('@/views/CompanySettings.vue')
+},
+{
+  path: '/company-profile',
+  name: 'CompanyProfile',
+  component: () => import('@/views/CompanyProfile.vue')
+},
+
+
   // ... (rute Login, Pos tidak berubah) ...
   { path: '/login', name: 'Login', component: Login, meta: { requiresAuth: false } },
   { path: '/', name: 'Pos', component: Pos, meta: { requiresAuth: true } },

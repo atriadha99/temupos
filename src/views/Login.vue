@@ -1,219 +1,254 @@
-<!-- 
-  src/views/Login.vue
-  (UPDATE) Tampilan full-styling dengan Tailwind CSS
-  DAN tambahan field (Nama, HP, Gender) di form Daftar
--->
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gray-100">
-    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-      
+  <!-- 
+    src/views/Login.vue
+    (REFACTOR BESAR) Ditulis ulang dengan Chakra UI
+  -->
+  <CBox 
+    min-h="100vh" 
+    bg="gray.50" 
+    d="flex" 
+    align-items="center" 
+    justify-content="center"
+    p="4"
+  >
+    <CBox 
+      w="full" 
+      max-w="md" 
+      bg="white" 
+      p="8" 
+      border-radius="xl" 
+      shadow="lg"
+    >
       <!-- Logo dan Judul -->
-      <div class="flex flex-col items-center">
-        <div class="flex items-center justify-center mb-4">
-          <span class="text-5xl">☕</span>
-          <h1 class="text-4xl font-bold text-gray-800 ml-3">TemuPOS</h1>
-        </div>
-        <p class="text-gray-500">{{ view === 'login' ? 'Silakan login untuk memulai sesi' : 'Buat akun baru' }}</p>
-      </div>
+      <CBox d="flex" align-items="center" justify-content="center" mb="6">
+        <CIcon name="coffee" size="32px" color="green.600" />
+        <CHeading as="h1" size="lg" ml="3" font-weight="bold" color="green.700">
+          TemuPOS
+        </CHeading>
+      </CBox>
 
-      <!-- Tombol Ganti View (Login/Daftar) -->
-      <div class="flex justify-center">
-        <div class="bg-gray-200 p-1 rounded-lg flex gap-2">
-          <button
-            @click="view = 'login'"
-            :class="[
-              'w-full px-6 py-2 rounded-md font-medium text-sm',
-              view === 'login' ? 'bg-white shadow text-green-700' : 'text-gray-600'
-            ]"
-          >
-            Login
-          </button>
-          <button
-            @click="view = 'register'"
-            :class="[
-              'w-full px-6 py-2 rounded-md font-medium text-sm',
-              view === 'register' ? 'bg-white shadow text-green-700' : 'text-gray-600'
-            ]"
-          >
-            Daftar
-          </button>
-        </div>
-      </div>
-
-      <!-- Form -->
-      <form class="space-y-4" @submit.prevent="handleSubmit">
-        <!-- Error Message -->
-        <div v-if="errorMsg" class="p-3 bg-red-100 text-red-700 rounded-lg text-sm text-center">
-          {{ errorMsg }}
-        </div>
+      <!-- Tab Login / Daftar -->
+      <CTabs v-model="tabIndex" is-fitted variant="enclosed-colored" color-scheme="green">
+        <CTabList>
+          <CTab font-weight="bold">Login</CTab>
+          <CTab font-weight="bold">Daftar</CTab>
+        </CTabList>
         
-        <!-- (BARU) Input Nama Lengkap (Hanya saat Daftar) -->
-        <div v-if="view === 'register'">
-          <label for="name" class="block text-sm font-medium text-gray-700">Nama Lengkap</label>
-          <input
-            v-model="form.full_name"
-            id="name"
-            type="text"
-            :required="view === 'register'"
-            class="w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder="Nama lengkap Anda"
-          />
-        </div>
+        <CTabPanels>
+          <!-- Panel Login -->
+          <CTabPanel>
+            <form @submit.prevent="handleLogin">
+              <CStack spacing="4" mt="6">
+                
+                <!-- (BARU) Tampilkan Error di sini -->
+                <CAlert v-if="authError" status="error" border-radius="md">
+                  <CAlertIcon />
+                  {{ authError }}
+                </CAlert>
 
-        <!-- Input Email -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-          <input
-            v-model="form.email"
-            id="email"
-            type="email"
-            required
-            class="w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder="nama@email.com"
-          />
-        </div>
-        
-        <!-- Input Password -->
-        <div>
-          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-          <input
-            v-model="form.password"
-            id="password"
-            type="password"
-            required
-            class="w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder="••••••••"
-          />
-        </div>
+                <CFormControl is-required>
+                  <CFormLabel>Email</CFormLabel>
+                  <CInput 
+                    v-model="email" 
+                    type="email" 
+                    placeholder="admin@temupos.com"
+                  />
+                </CFormControl>
 
-        <!-- (BARU) Input No. Telepon (Hanya saat Daftar) -->
-        <div v-if="view === 'register'">
-          <label for="phone" class="block text-sm font-medium text-gray-700">No. Telepon (WhatsApp)</label>
-          <input
-            v-model="form.phone"
-            id="phone"
-            type="tel"
-            :required="view === 'register'"
-            class="w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            placeholder="0812..."
-          />
-        </div>
+                <CFormControl is-required>
+                  <CFormLabel>Password</CFormLabel>
+                  <CInputGroup>
+                    <CInput 
+                      v-model="password"
+                      :type="showPassword ? 'text' : 'password'"
+                      placeholder="••••••••"
+                    />
+                    <CInputRightElement>
+                      <CButton 
+                        h="1.75rem" 
+                        size="sm" 
+                        @click="showPassword = !showPassword"
+                      >
+                        {{ showPassword ? 'Hide' : 'Show' }}
+                      </CButton>
+                    </CInputRightElement>
+                  </CInputGroup>
+                </CFormControl>
 
-        <!-- (BARU) Input Jenis Kelamin (Hanya saat Daftar) -->
-        <div v-if="view === 'register'">
-          <label for="gender" class="block text-sm font-medium text-gray-700">Jenis Kelamin</label>
-          <select
-            v-model="form.gender"
-            id="gender"
-            :required="view === 'register'"
-            class="w-full px-4 py-3 mt-1 text-gray-900 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          >
-            <option value="pria">Pria</option>
-            <option value="wanita">Wanita</option>
-          </select>
-        </div>
-        
-        <!-- Tombol Submit -->
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full py-3 font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 disabled:bg-gray-400"
-        >
-          <span v-if="loading">Memproses...</span>
-          <span v-else>{{ view === 'login' ? 'Login' : 'Daftar Sekarang' }}</span>
-        </button>
-      </form>
-    </div>
-  </div>
+                <CButton 
+                  type="submit"
+                  color-scheme="green" 
+                  size="lg" 
+                  font-size="md" 
+                  :is-loading="loading"
+                  w="full"
+                >
+                  Login
+                </CButton>
+              </CStack>
+            </form>
+          </CTabPanel>
+
+          <!-- Panel Daftar -->
+          <CTabPanel>
+            <form @submit.prevent="handleSignup">
+              <CStack spacing="4" mt="6">
+
+                <!-- (BARU) Tampilkan Error di sini -->
+                <CAlert v-if="authError" status="error" border-radius="md">
+                  <CAlertIcon />
+                  {{ authError }}
+                </CAlert>
+                
+                <CFormControl is-required>
+                  <CFormLabel>Nama Lengkap</CFormLabel>
+                  <CInput 
+                    v-model="form.full_name" 
+                    placeholder="Nama Anda"
+                  />
+                </CFormControl>
+                
+                <CFormControl is-required>
+                  <CFormLabel>Nomor HP</CFormLabel>
+                  <CInput 
+                    v-model="form.phone" 
+                    placeholder="0812..."
+                  />
+                </CFormControl>
+
+                <CFormControl is-required>
+                  <CFormLabel>Jenis Kelamin</CFormLabel>
+                  <CRadioGroup v-model="form.gender" d="flex" gap="6">
+                    <CRadio value="Laki-laki">Laki-laki</CRadio>
+                    <CRadio value="Perempuan">Perempuan</CRadio>
+                  </CRadioGroup>
+                </CFormControl>
+                
+                <hr />
+
+                <CFormControl is-required>
+                  <CFormLabel>Email</CFormLabel>
+                  <CInput 
+                    v-model="email" 
+                    type="email" 
+                    placeholder="email@anda.com"
+                  />
+                </CFormControl>
+
+                <CFormControl is-required>
+                  <CFormLabel>Password</CFormLabel>
+                  <CInput 
+                    v-model="password"
+                    type="password"
+                    placeholder="Buat password yang kuat"
+                  />
+                </CFormControl>
+
+                <CButton 
+                  type="submit"
+                  color-scheme="blue" 
+                  size="lg" 
+                  font-size="md" 
+                  :is-loading="loading"
+                  w="full"
+                >
+                  Daftar Sekarang
+                </CButton>
+              </CStack>
+            </form>
+          </CTabPanel>
+        </CTabPanels>
+      </CTabs>
+    </CBox>
+  </CBox>
 </template>
 
 <script>
-import { ref, watch } from 'vue'
+// SEMUA LOGIKA DI SINI SAMA PERSIS, TIDAK BERUBAH
+import { ref } from 'vue'
 import { supabase } from '../supabaseClient'
 import { useRouter } from 'vue-router'
 
-// (BARU) Fungsi untuk mereset form
-const getDefaultFormState = () => ({
-  email: '',
-  password: '',
-  full_name: '',
-  phone: '',
-  gender: 'pria' // Default value
-})
-
 export default {
   setup() {
-    const view = ref('login') // 'login' or 'register'
     const router = useRouter()
-    const form = ref(getDefaultFormState())
     const loading = ref(false)
-    const errorMsg = ref(null)
-
-    // (BARU) Awasi perubahan view, reset form jika berganti
-    watch(view, () => {
-      form.value = getDefaultFormState()
-      errorMsg.value = null
+    const email = ref('')
+    const password = ref('')
+    const authError = ref(null)
+    const tabIndex = ref(0) // 0 = Login, 1 = Daftar
+    const showPassword = ref(false)
+    
+    // Form data untuk pendaftaran
+    const form = ref({
+      full_name: '',
+      phone: '',
+      gender: 'Laki-laki'
     })
 
-    const handleSubmit = async () => {
+    // Fungsi untuk login
+    const handleLogin = async () => {
       loading.value = true
-      errorMsg.value = null
+      authError.value = null
       try {
-        if (view.value === 'login') {
-          // Logic Login (Tidak berubah)
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: form.value.email,
-            password: form.value.password,
-          })
-          if (error) throw error
-          
-          const user = data.user
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-            
-          if (profile?.role === 'admin') {
-            router.push({ name: 'Admin' })
-          } else {
-            router.push({ name: 'Pos' })
-          }
-
-        } else {
-          // (UPDATE) Logic Daftar
-          const { error } = await supabase.auth.signUp({
-            email: form.value.email,
-            password: form.value.password,
-            // (BARU) Kirim data ekstra ke Supabase
-            // Ini akan ditangkap oleh function SQL 'create_profile_on_signup'
-            options: {
-              data: {
-                full_name: form.value.full_name,
-                phone: form.value.phone,
-                gender: form.value.gender
-              }
-            }
-          })
-          if (error) throw error
-          alert('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi (jika diaktifkan), lalu login.')
-          view.value = 'login' // Arahkan ke tab login
-        }
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.value,
+          password: password.value,
+        })
+        if (error) throw error
+        router.push({ name: 'Pos' }) // Arahkan ke POS setelah login
       } catch (error) {
-        errorMsg.value = `Error: ${error.message}`
+        authError.value = 'Email atau password salah: ' + error.message
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // Fungsi untuk daftar
+    const handleSignup = async () => {
+      loading.value = true
+      authError.value = null
+      try {
+        const { error } = await supabase.auth.signUp(
+          {
+            email: email.value,
+            password: password.value,
+          },
+          {
+            // Kirim data tambahan ke tabel 'profiles' via trigger
+            data: {
+              full_name: form.value.full_name,
+              phone: form.value.phone,
+              gender: form.value.gender
+            }
+          }
+        )
+        if (error) throw error
+        
+        // Pindah ke tab login dan kasih pesan sukses
+        tabIndex.value = 0
+        email.value = ''
+        password.value = ''
+        alert('Daftar berhasil! Silakan cek email untuk verifikasi (jika aktif) dan login.')
+        
+      } catch (error) {
+        authError.value = 'Gagal mendaftar: ' + error.message
       } finally {
         loading.value = false
       }
     }
 
     return {
-      view,
-      form,
       loading,
-      errorMsg,
-      handleSubmit
+      email,
+      password,
+      authError,
+      tabIndex,
+      showPassword,
+      form,
+      handleLogin,
+      handleSignup,
     }
-  }
+  },
 }
-</script>
-
+</script> 

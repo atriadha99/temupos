@@ -1,155 +1,167 @@
-<!-- eslint-disable vue/multi-word-component-names -->
-<!-- 
-  src/views/Receipt.vue
-  Template Struk untuk Print (Fase 5.A)
--->
 <template>
-  <div v-if="loading" class="p-4 text-center" style="font-family: 'Courier New', Courier, monospace;">
-    Memuat data struk...
-  </div>
-  
-  <div v-else-if="error" class="p-4 text-center text-red-500" style="font-family: 'Courier New', Courier, monospace;">
-    Gagal memuat data: {{ error }}
-  </div>
-
-  <!-- Kontainer struk, beri style inline agar prioritas saat print -->
-  <div v-else-if="transaction" id="receipt-container" class="p-2" style="width: 300px; font-family: 'Courier New', Courier, monospace; color: #000; font-size: 12px; line-height: 1.4;">
+  <div class="p-4 max-w-xs mx-auto font-mono text-xs text-black" ref="receiptRoot" id="receipt-root">
     <div class="text-center mb-2">
-      <h1 style="font-size: 16px; font-weight: bold;">TemuPOS</h1>
-      <p>Jl. Visi Masa Depan No. 1</p>
-      <p>Depok, Indonesia</p>
+      <img
+        v-if="company?.logo_url"
+        :src="company.logo_url"
+        alt="logo"
+        class="mx-auto mb-1 w-20 h-20 object-contain"
+      />
+      <div class="font-bold text-sm">{{ company?.name || 'Bisnis Kamu' }}</div>
+      <div class="text-[10px] text-gray-700">{{ company?.tagline || '' }}</div>
+      <div class="text-[10px] mt-1">{{ company?.address || '' }}</div>
     </div>
 
-    <hr style="border-top: 1px dashed #000; margin-top: 8px; margin-bottom: 8px;" />
+    <div class="border-t border-dashed my-2"></div>
 
     <div>
-      <p>ID Struk: #{{ transaction.id }}</p>
-      <p>Tanggal: {{ new Date(transaction.created_at).toLocaleString('id-ID') }}</p>
-      <p>Kasir: {{ transaction.cashier?.email || 'N/A' }}</p>
-      <p v-if="transaction.customer">Pelanggan: {{ transaction.customer.name }}</p>
-    </div>
-
-    <hr style="border-top: 1px dashed #000; margin-top: 8px; margin-bottom: 8px;" />
-
-    <!-- Daftar Item -->
-    <div v-for="item in transaction.items" :key="item.name" class="mb-1">
-      <p style="font-weight: 500;">{{ item.name }}</p>
-      <div style="display: flex; justify-content: space-between;">
-        <span>&nbsp;&nbsp;{{ item.qty }} x {{ formatCurrency(item.price) }}</span>
-        <span>{{ formatCurrency(item.subtotal) }}</span>
+      <div class="flex justify-between">
+        <div>ID</div>
+        <div>#{{ tx.id }}</div>
+      </div>
+      <div class="flex justify-between">
+        <div>Tgl</div>
+        <div>{{ formattedDate }}</div>
+      </div>
+      <div class="flex justify-between">
+        <div>Kasir</div>
+        <div>{{ tx.cashier_name || '-' }}</div>
+      </div>
+      <div v-if="tx.customer" class="flex justify-between">
+        <div>Pelanggan</div>
+        <div>{{ tx.customer.name }}</div>
       </div>
     </div>
 
-    <hr style="border-top: 1px dashed #000; margin-top: 8px; margin-bottom: 8px;" />
+    <div class="border-t border-dashed my-2"></div>
 
-    <!-- Total -->
-    <div>
-      <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px;">
-        <span>TOTAL</span>
-        <span>{{ formatCurrency(transaction.total_amount) }}</span>
-      </div>
-      <div style="display: flex; justify-content: space-between;">
-        <span>BAYAR ({{ transaction.payment_method.toUpperCase() }})</span>
-        <span>{{ formatCurrency(transaction.total_amount) }}</span>
-      </div>
+    <div v-for="item in tx.items" :key="item.id" class="flex justify-between">
+      <div class="w-2/3 truncate">{{ item.name }} x{{ item.qty }}</div>
+      <div class="w-1/3 text-right">Rp {{ Number(item.subtotal).toLocaleString('id-ID') }}</div>
     </div>
-    
-    <hr style="border-top: 1px dashed #000; margin-top: 8px; margin-bottom: 8px;" />
 
-    <p class="text-center mt-2" style="text-align: center; margin-top: 8px;">
-      ** Terima Kasih **
-    </p>
+    <div class="border-t border-dashed my-2"></div>
+
+    <div class="flex justify-between">
+      <div>Subtotal</div>
+      <div>Rp {{ Number(tx.subtotal || 0).toLocaleString('id-ID') }}</div>
+    </div>
+    <div v-if="tx.discount_amount > 0" class="flex justify-between">
+      <div>Diskon</div>
+      <div>- Rp {{ Number(tx.discount_amount).toLocaleString('id-ID') }}</div>
+    </div>
+    <div v-if="tx.points_value_redeemed > 0" class="flex justify-between">
+      <div>Redeem Poin</div>
+      <div>- Rp {{ Number(tx.points_value_redeemed).toLocaleString('id-ID') }}</div>
+    </div>
+
+    <div class="mt-2 border-t pt-2 font-bold flex justify-between">
+      <div>Total</div>
+      <div>Rp {{ Number(tx.final_amount || 0).toLocaleString('id-ID') }}</div>
+    </div>
+
+    <div class="text-center mt-3 text-[11px]">
+      {{ company?.tagline || '' }}<br />
+      Terima kasih telah bertransaksi!
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { supabase } from '../supabaseClient'
+import { supabase } from '@/supabaseClient'
+import { getCompanyProfile } from '@/utils/company'
+
 
 export default {
+  name: 'ReceiptPrint',
   setup() {
+
+const company = ref(null)
+
+onMounted(async () => {
+  company.value = await getCompanyProfile()
+})
+
     const route = useRoute()
-    const transaction = ref(null)
-    const loading = ref(true)
-    const error = ref(null)
+    const id = route.params.id
+    const tx = ref({
+      id,
+      items: [],
+      subtotal: 0,
+      final_amount: 0
+    })
+    const receiptRoot = ref(null)
 
-    const formatCurrency = (val) => {
-      return Number(val).toLocaleString('id-ID')
-    }
+    const formattedDate = computed(() => {
+      return tx.value.created_at
+        ? new Date(tx.value.created_at).toLocaleString('id-ID')
+        : ''
+    })
 
-    const fetchReceiptData = async () => {
-      loading.value = true
-      error.value = null
-      try {
-        const transactionId = route.params.id
-        if (!transactionId) throw new Error('ID Transaksi tidak ditemukan')
+    const fetchTransaction = async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select(`
+          *,
+          customer:customers(id,name,phone,points),
+          items:transaction_items(id,product_id,name,qty,price,subtotal)
+        `)
+        .eq('id', id)
+        .single()
 
-        // Panggil fungsi SQL
-        const { data, error: rpcError } = await supabase.rpc('get_transaction_details', {
-          p_transaction_id: transactionId
-        })
-        
-        if (rpcError) throw rpcError
-        if (!data) throw new Error('Data transaksi tidak ditemukan')
+      if (error) {
+        console.error('Fetch transaction error:', error)
+        return
+      }
 
-        transaction.value = data
-        
-        // Tunggu DOM selesai di-render dengan data
-        await nextTick()
-        
-        // Panggil dialog print
-        window.print()
-        
-      } catch (err) {
-        error.value = err.message
-      } finally {
-        loading.value = false
+      tx.value = data
+
+      if (data.company_id) {
+        const { data: companyData, error: companyErr } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', data.company_id)
+          .single()
+
+        if (!companyErr) company.value = companyData
       }
     }
 
-    onMounted(() => {
-      fetchReceiptData()
+    const doAutoPrint = () => {
+      setTimeout(() => window.print(), 600)
+    }
+
+    onMounted(async () => {
+      await fetchTransaction()
+      doAutoPrint()
     })
 
     return {
-      transaction,
-      loading,
-      error,
-      formatCurrency
+      tx,
+      company,
+      formattedDate,
+      receiptRoot
     }
   }
 }
 </script>
 
-<style>
-/* CSS khusus untuk halaman print */
+<style scoped>
 @media print {
-  body {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    margin: 0;
-    padding: 0;
+  body * {
+    visibility: hidden;
   }
-  /* Sembunyikan semua kecuali kontainer struk */
-  body > *:not(#receipt-container) {
-    display: none;
+  #receipt-root,
+  #receipt-root * {
+    visibility: visible;
   }
-  #receipt-container {
+  #receipt-root {
     position: absolute;
-    top: 0;
     left: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-  }
-  /* Paksa teks hitam */
-  * {
-    color: #000 !important;
-  }
-  hr {
-    border-top: 1px dashed #000 !important;
+    top: 0;
+    width: 300px;
   }
 }
 </style>
-

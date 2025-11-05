@@ -1,64 +1,108 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div class="flex min-h-screen">
+  <!-- 
+    src/views/Admin.vue
+    (REFACTOR) Menggunakan Chakra UI <CFlex> & <CBox>
+  -->
+  <CFlex min-h="100vh" bg="gray.100">
     <!-- Sidebar Navigasi -->
-    <div class="w-64 bg-gray-900 text-white flex flex-col shadow-lg">
-      <div class="p-6">
-        <h1 class="text-2xl font-bold text-yellow-400">🔑 CMS TemuPOS</h1>
-        <p class="text-sm text-gray-400">Admin Dashboard</p>
-      </div>
+    <CBox
+      w="256px"
+      bg="gray.800"
+      color="white"
+      d="flex"
+      flex-direction="column"
+      shadow="lg"
+      position="fixed"
+      h="full"
+    >
+      <CBox p="6">
+        <CHeading as="h1" size="lg" color="yellow.400">🔑 CMS TemuPOS</CHeading>
+        <CText font-size="sm" color="gray.400">Admin Dashboard</CText>
+      </CBox>
       
-      <nav class="flex-1 px-4 py-2 space-y-2">
-        <router-link 
-          to="/admin/reports" 
-          class="flex items-center px-3 py-2 rounded-lg"
-          active-class="bg-gray-700 text-yellow-400"
-          exact-active-class="bg-gray-700 text-yellow-400"
+      <CStack as="nav" flex="1" p="4" spacing="2">
+        <!-- Link Navigasi -->
+        <CButton
+          as="router-link"
+          to="/admin/reports"
+          variant="ghost"
+          justify-content="start"
+          left-icon="chart-bar"
+          color-scheme="whiteAlpha"
+          _active-link="{ bg: 'whiteAlpha.200', color: 'yellow.400' }"
         >
-          <span class="mr-3 text-xl">📊</span>
           Laporan
-        </router-link>
+        </CButton>
         
-        <router-link 
-          to="/admin/products" 
-          class="flex items-center px-3 py-2 rounded-lg"
-          active-class="bg-gray-700 text-yellow-400"
-          exact-active-class="bg-gray-700 text-yellow-400"
+        <CButton
+          as="router-link"
+          to="/admin/products"
+          variant="ghost"
+          justify-content="start"
+          left-icon="box"
+          color-scheme="whiteAlpha"
+          _active-link="{ bg: 'whiteAlpha.200', color: 'yellow.400' }"
         >
-          <span class="mr-3 text-xl">📦</span>
           Produk
-        </router-link>
+        </CButton>
 
-        <router-link 
-          to="/admin/customers" 
-          class="flex items-center px-3 py-2 rounded-lg"
-          active-class="bg-gray-700 text-yellow-400"
-          exact-active-class="bg-gray-700 text-yellow-400"
+        <CButton
+          as="router-link"
+          to="/admin/customers"
+          variant="ghost"
+          justify-content="start"
+          left-icon="users"
+          color-scheme="whiteAlpha"
+          _active-link="{ bg: 'whiteAlpha.200', color: 'yellow.400' }"
         >
-          <span class="mr-3 text-xl">👥</span>
           Pelanggan
-        </router-link>
-      </nav>
+        </CButton>
+        
+        <CButton
+          as="router-link"
+          to="/admin/settings"
+          variant="ghost"
+          justify-content="start"
+          left-icon="cog"
+          color-scheme="whiteAlpha"
+          _active-link="{ bg: 'whiteAlpha.200', color: 'yellow.400' }"
+        >
+          Pengaturan
+        </CButton>
+      </CStack>
 
       <!-- Footer Sidebar -->
-      <div class="p-4 border-t border-gray-700">
-        <router-link to="/" class="block text-center text-sm bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 mb-2">
+      <CStack p="4" border-top="1px" border-color="gray.700" spacing="3">
+        <CButton
+          as="router-link"
+          to="/pos"
+          color-scheme="green"
+        >
           Kembali ke POS
-        </router-link>
-        <button @click="handleLogout" class="w-full text-sm bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700">
+        </CButton>
+        <CButton
+          color-scheme="red"
+          variant="outline"
+          @click="handleLogout"
+        >
           Logout
-        </button>
-      </div>
-    </div>
+        </CButton>
+      </CStack>
+    </CBox>
     
     <!-- Area Konten Utama -->
-    <div class="flex-1 bg-gray-100 p-8 overflow-y-auto">
+    <CBox flex="1" ml="256px" p="8" overflow-y="auto">
+      <!-- 
+        Di sinilah <router-view> akan merender 
+        komponen anak (Reports, Products, dll)
+      -->
       <router-view />
-    </div>
-  </div>
+    </CBox>
+  </CFlex>
 </template>
 
 <script>
+// (SCRIPT TIDAK BERUBAH)
 import { supabase } from '../supabaseClient'
 import { useRouter } from 'vue-router'
 
@@ -70,10 +114,9 @@ export default {
       if (confirm('Anda yakin ingin logout dari CMS?')) {
         const { error } = await supabase.auth.signOut()
         if (error) {
-          // PERBAIKAN: Tanda kutip 'H' salah, seharusnya '+'
           alert('Gagal logout: ' + error.message)
         } else {
-          router.push({ name: 'Login' })
+          router.push({ name: 'Landing' })
         }
       }
     }
@@ -84,4 +127,3 @@ export default {
   }
 }
 </script>
-

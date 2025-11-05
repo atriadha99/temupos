@@ -1,73 +1,77 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <div>
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold">Manajemen Produk</h1>
-      <button 
+  <!-- 
+    src/views/admin/Products.vue
+    (REFACTOR) Menggunakan Chakra UI <CButton> & <CTable>
+  -->
+  <CBox>
+    <CFlex justify="space-between" align="center" mb="6">
+      <CHeading as="h1" size="xl">Manajemen Produk</CHeading>
+      <CButton 
+        color-scheme="green"
+        left-icon="add"
         @click="handleAddNew"
-        class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 font-medium shadow"
       >
-        + Tambah Produk Baru
-      </button>
-    </div>
+        Tambah Produk Baru
+      </CButton>
+    </CFlex>
 
     <!-- Tabel Produk -->
-    <div class="bg-white rounded-xl shadow overflow-hidden">
-      <div v-if="loading" class="p-6 text-center text-gray-500">
+    <CBox bg="white" rounded="xl" shadow="md" overflow="hidden">
+      <CText v-if="loading" p="6" text-align="center" color="gray.500">
         Memuat data produk...
-      </div>
+      </CText>
       
-      <div v-else-if="products.length === 0" class="p-6 text-center text-gray-500">
+      <CText v-else-if="products.length === 0" p="6" text-align="center" color="gray.500">
         Belum ada produk. Silakan tambah produk baru.
-      </div>
+      </CText>
       
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produk</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="product in products" :key="product.id">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <img 
+      <CTableContainer v-else>
+        <CTable variant="simple">
+          <CThead bg="gray.50">
+            <CTr>
+              <CTh>Produk</CTh>
+              <CTh>Kategori</CTh>
+              <CTh is-numeric>Harga</CTh>
+              <CTh text-align="right">Aksi</CTh>
+            </CTr>
+          </CThead>
+          <CTbody>
+            <CTr v-for="product in products" :key="product.id">
+              <CTd>
+                <CFlex align="center">
+                  <CImage
                     :src="product.image_url || 'https://placehold.co/40x40/e2e8f0/94a3b8?text=...'" 
                     :alt="product.name" 
-                    class="w-10 h-10 rounded object-cover mr-3"
+                    size="40px"
+                    rounded="md"
+                    object-fit="cover"
+                    mr="3"
                   />
-                  <span class="font-medium text-gray-900">{{ product.name }}</span>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ product.category }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">
+                  <CText font-weight="medium">{{ product.name }}</CText>
+                </CFlex>
+              </CTd>
+              <CTd font-size="sm" color="gray.600">{{ product.category }}</CTd>
+              <CTd is-numeric font-weight="medium">
                 Rp {{ Number(product.price).toLocaleString('id-ID') }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button 
-                  @click="handleEdit(product)" 
-                  class="text-yellow-600 hover:text-yellow-900 mr-4"
-                >
+              </CTd>
+              <CTd text-align="right">
+                <CButton variant="ghost" color-scheme="yellow" size="sm" mr="2" @click="handleEdit(product)">
                   Edit
-                </button>
-                <button 
-                  @click="handleDelete(product)" 
-                  class="text-red-600 hover:text-red-900"
-                >
+                </CButton>
+                <CButton variant="ghost" color-scheme="red" size="sm" @click="handleDelete(product)">
                   Hapus
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+                </CButton>
+              </CTd>
+            </CTr>
+          </CTbody>
+        </CTable>
+      </CTableContainer>
+    </CBox>
 
-    <!-- Modal untuk Tambah/Edit -->
+    <!-- 
+      Modal untuk Tambah/Edit
+      (Komponen ProductModal sudah di-refactor)
+    -->
     <ProductModal
       :show="showModal"
       :loading="loadingModal"
@@ -76,10 +80,11 @@
       @save="handleSave"
     />
 
-  </div>
+  </CBox>
 </template>
 
 <script>
+// (SCRIPT TIDAK BERUBAH)
 import { ref, onMounted } from 'vue'
 import { supabase } from '../../supabaseClient'
 import ProductModal from '../../components/ProductModal.vue'
@@ -92,13 +97,10 @@ export default {
   setup() {
     const products = ref([])
     const loading = ref(true)
-    
-    // State untuk Modal
     const showModal = ref(false)
     const loadingModal = ref(false)
     const productToEdit = ref(null)
 
-    // (R)EAD
     const fetchProducts = async () => {
       loading.value = true
       try {
@@ -115,21 +117,18 @@ export default {
       }
     }
 
-    // (C)REATE: Buka modal
     const handleAddNew = () => {
       productToEdit.value = null
       showModal.value = true
     }
 
-    // (U)PDATE: Buka modal
     const handleEdit = (product) => {
-      productToEdit.value = { ...product }
+      productToEdit.value = { ...product } 
       showModal.value = true
     }
 
-    // (D)ELETE
     const handleDelete = async (product) => {
-      if (!confirm(`Anda yakin ingin menghapus "${product.name}"?\n\nData ini tidak bisa dikembalikan.`)) {
+      if (!confirm(Anda yakin ingin menghapus "${product.name}"?\n\nData ini tidak bisa dikembalikan.)) {
         return
       }
       try {
@@ -145,34 +144,27 @@ export default {
       }
     }
 
-    // (SAVE): Logika Create/Update
     const handleSave = async (formData) => {
       loadingModal.value = true
       const { id, ...productData } = formData
-
       try {
         let error;
         if (id) {
-          // UPDATE
           const { error: updateError } = await supabase
             .from('products')
             .update(productData)
             .eq('id', id)
           error = updateError
         } else {
-          // CREATE
           const { error: insertError } = await supabase
             .from('products')
             .insert(productData)
           error = insertError
         }
-
         if (error) throw error
-        
-        alert(`Produk berhasil ${id ? 'diperbarui' : 'ditambahkan'}!`)
+        alert(Produk berhasil ${id ? 'diperbarui' : 'ditambahkan'}!)
         showModal.value = false
-        await fetchProducts() // Refresh data
-
+        await fetchProducts()
       } catch (error) {
         alert('Gagal menyimpan produk: ' + error.message)
       } finally {
@@ -185,11 +177,16 @@ export default {
     })
 
     return {
-      products, loading,
-      showModal, loadingModal, productToEdit,
-      handleAddNew, handleEdit, handleDelete, handleSave
+      products,
+      loading,
+      showModal,
+      loadingModal,
+      productToEdit,
+      handleAddNew,
+      handleEdit,
+      handleDelete,
+      handleSave
     }
   }
 }
 </script>
-

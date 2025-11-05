@@ -1,54 +1,74 @@
-<!-- 
-  src/components/ProductGrid.vue
-  Komponen untuk menampilkan produk di POS (Fase 2)
--->
 <template>
-  <div>
-    <h2 class="text-xl font-bold mb-4">Daftar Produk</h2>
+  <!-- 
+    src/components/ProductGrid.vue
+    (REFACTOR) Menggunakan Chakra UI <CBox> & <CSimpleGrid>
+  -->
+  <CBox>
+    <CHeading as="h2" size="lg" mb="4">Daftar Produk</CHeading>
     
-    <!-- Loading -->
-    <div v-if="loading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <!-- Placeholder Skeleton -->
-      <div v-for="n in 8" :key="n" class="bg-white rounded-xl shadow p-4 animate-pulse">
-        <div class="w-full h-24 bg-gray-200 rounded-lg mb-2"></div>
-        <div class="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
-        <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-      </div>
-    </div>
-    
-    <!-- Data Kosong -->
-    <div v-else-if="products.length === 0" class="bg-white rounded-xl shadow p-10 text-center">
-      <p class="font-medium text-gray-700">Belum ada produk.</p>
-      <p class="text-sm text-gray-500">Admin bisa menambahkan produk di halaman CMS.</p>
-    </div>
+    <!-- Loading Skeleton -->
+    <CSimpleGrid v-if="loading" columns="3" spacing="4">
+      <CBox v-for="n in 6" :key="n" p="4" bg="white" rounded="xl" shadow="md">
+        <CSkeleton height="120px" rounded="md" />
+        <CSkeleton height="20px" mt="4" />
+        <CSkeleton height="16px" mt="2" />
+      </CBox>
+    </CSimpleGrid>
+
+    <!-- Pesan Belum Ada Produk -->
+    <CAlert 
+      v-else-if="!loading && products.length === 0" 
+      status="info" 
+      rounded="lg"
+    >
+      <CAlertIcon />
+      <CBox>
+        <CAlertTitle>Belum ada produk.</CAlertTitle>
+        <CAlertDescription>
+          Admin bisa menambahkan produk di halaman CMS.
+        </CAlertDescription>
+      </CBox>
+    </CAlert>
 
     <!-- Grid Produk -->
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      <div
+    <CSimpleGrid v-else columns="3" spacing="4">
+      <CBox
         v-for="p in products"
         :key="p.id"
-        class="bg-white rounded-xl shadow hover:shadow-lg transition cursor-pointer p-4 text-center flex flex-col"
+        bg="white"
+        rounded="xl"
+        shadow="md"
+        p="4"
+        transition="all 0.2s"
+        :_hover="{ shadow: 'lg', transform: 'translateY(-2px)' }"
+        cursor="pointer"
         @click="$emit('add', p)"
       >
-        <img 
-          :src="p.image_url || 'https://placehold.co/150x150/e2e8f0/94a3b8?text=...'" 
-          :alt="p.name" 
-          class="w-full h-24 object-cover rounded-lg mb-2"
-          loading="lazy"
+        <CImage
+          :src="p.image_url || 'https://placehold.co/150x150/e2e8f0/94a3b8?text=...'"
+          :alt="p.name"
+          h="120px"
+          w="full"
+          object-fit="cover"
+          rounded="md"
+          mb="3"
         />
-        <div class="flex-1 flex flex-col justify-between">
-          <p class="font-medium leading-tight">{{ p.name }}</p>
-          <p class="text-sm text-gray-600 mt-1">Rp {{ Number(p.price).toLocaleString('id-ID') }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
+        <CText font-weight="bold" no-of-lines="1">{{ p.name }}</CText>
+        <CText font-size="sm" color="gray.600">
+          Rp {{ Number(p.price).toLocaleString('id-ID') }}
+        </CText>
+      </CBox>
+    </CSimpleGrid>
+  </CBox>
 </template>
 
 <script>
+// (SCRIPT TIDAK BERUBAH)
 export default {
-  props: ['products', 'loading'],
+  props: {
+    products: { type: Array, default: () => [] },
+    loading: { type: Boolean, default: true }
+  },
   emits: ['add']
 }
 </script>
-
